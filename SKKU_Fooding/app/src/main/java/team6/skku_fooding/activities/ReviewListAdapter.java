@@ -1,6 +1,7 @@
 package team6.skku_fooding.activities;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,16 +32,19 @@ public class ReviewListAdapter extends ArrayAdapter<Review> {
     @Override
     public View getView(int position, View convertView, ViewGroup parent){
         System.out.println("llllllllllllllllll");
-        View v=convertView;
+
         Review review=getItem(position);
-            v = LayoutInflater.from(context).inflate(R.layout.reviewlist,parent,false);
+        if(convertView==null) {
+            convertView = LayoutInflater.from(getContext()).inflate(R.layout.reviewlist, parent, false);
+        }
 
 
-            TextView userid = (TextView) v.findViewById(R.id.userid);
-            TextView description = (TextView) v.findViewById(R.id.description);
-            TextView modifiedDate = (TextView) v.findViewById(R.id.modifieddate);
-            TextView title = (TextView) v.findViewById(R.id.title);
-            TextView score = (TextView) v.findViewById(R.id.score);
+            TextView userid = (TextView) convertView.findViewById(R.id.userid);
+
+            TextView description = (TextView) convertView.findViewById(R.id.description);
+            TextView modifiedDate = (TextView) convertView.findViewById(R.id.modifieddate);
+            TextView title = (TextView) convertView.findViewById(R.id.title);
+            TextView score = (TextView) convertView.findViewById(R.id.score);
             System.out.println(review.title);
             userid.setText(review.reviewId);
             description.setText(review.description);
@@ -49,6 +53,6 @@ public class ReviewListAdapter extends ArrayAdapter<Review> {
             score.setText(review.score);
 
 
-        return  v;
+        return  convertView;
     }
 }

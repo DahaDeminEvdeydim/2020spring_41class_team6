@@ -1,10 +1,16 @@
 package team6.skku_fooding.activities;
 
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.util.Base64;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +29,7 @@ import java.util.Date;
 public class Product_detail extends AppCompatActivity {
 TextView company,name,ingredient,price,uploadeddate;
 TextView specificavg,generalavg;
+ImageView image;
 //ImageView image;
 int specificaverage;
 int generalaverage;
@@ -50,7 +57,7 @@ DatabaseReference reff;
 
 
         company=findViewById(R.id.company);
-        //image=findViewById(R.id.image);
+        image=findViewById(R.id.image);
         name=findViewById(R.id.name);
         ingredient=findViewById(R.id.ingredient);
         price= findViewById(R.id.price);
@@ -60,11 +67,14 @@ DatabaseReference reff;
             @Override
             public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                 String comp=dataSnapshot.child("company").getValue().toString();
-                // Image img=dataSnapshot.child("image").getValue()
+                String img=dataSnapshot.child("image").getValue().toString();
                 String ing=dataSnapshot.child("ingredient").getValue().toString();
                 String nm=dataSnapshot.child("name").getValue().toString();
                 String prc=dataSnapshot.child("price").getValue().toString();
                 String up_date=dataSnapshot.child("uploaded_date").getValue().toString();
+                byte[]imageBytes = Base64.decode(img, Base64.DEFAULT);
+                Bitmap decodedImage = BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.length);
+                image.setImageBitmap(decodedImage);
                 company.setText(comp);
                 name.setText(nm);
                 ingredient.setText(ing);
@@ -99,29 +109,29 @@ DatabaseReference reff;
                     //Reviews going tobe set here and then add to list
                     int ratespecific=0;
                     int rategeneral=0;
+                    if(ds.child("categoryId").exists()) {
+                        if (Integer.parseInt(ds.child("categoryId").getValue().toString()) == 0 && Integer.parseInt(ds.child("productId").getValue().toString()) == 250) {
+                            System.out.println("varmis");
+                            forproductreview.reviewId = Integer.parseInt(ds.child("reviewId").getValue().toString());
+                            System.out.println(Integer.parseInt(ds.child("reviewId").getValue().toString()));
+                            forproductreview.score = Integer.parseInt(ds.child("rate").getValue().toString());
+                            forproductreview.modifiedDate =  (ds.child("modifiedDate").getValue()).toString();
+                            forproductreview.title = ds.child("title").getValue().toString();
+                            forproductreview.description = ds.child("description").getValue().toString();
 
-                    if(Integer.parseInt(ds.child("category_id").getValue().toString())==2 && Integer.parseInt(ds.child("product_id").getValue().toString())==250){
-                        System.out.println("varmis");
-                        forproductreview.reviewId=Integer.parseInt(ds.child("review_id").getValue().toString());
-                        System.out.println(Integer.parseInt(ds.child("review_id").getValue().toString()));
-                        forproductreview.score=Integer.parseInt(ds.child("rate").getValue().toString());
-                        forproductreview.modifiedDate=(Date)(ds.child("modifieddate").getValue());
-                        forproductreview.title=ds.child("title").getValue().toString();
-                        forproductreview.description=ds.child("description") .getValue().toString();
+                            ratespecific = Integer.parseInt(ds.child("rate").getValue().toString());
+                            specificaverage = specificaverage + ratespecific;
+                            rews.add(forproductreview);
 
-                        ratespecific=Integer.parseInt(ds.child("rate").getValue().toString());
-                        specificaverage=specificaverage+ratespecific;
-                        rews.add(forproductreview);
-
-                        System.out.println(rews);
-                        countspecific++;
+                            System.out.println(rews);
+                            countspecific++;
+                        }
+                        if (Integer.parseInt(ds.child("productId").getValue().toString()) == 250) {
+                            rategeneral = Integer.parseInt(ds.child("rate").getValue().toString());
+                            generalaverage = generalaverage + rategeneral;
+                            countgeneral++;
+                        }
                     }
-                    if(Integer.parseInt(ds.child("product_id").getValue().toString())==250) {
-                        rategeneral = Integer.parseInt(ds.child("rate").getValue().toString());
-                        generalaverage = generalaverage + rategeneral;
-                        countgeneral++;
-                    }
-
 
                     System.out.println("bakbakalim");
                 }
@@ -147,7 +157,179 @@ DatabaseReference reff;
 
     }
 
-    public void shoppingcart(View view){
+    public void remove(View view){
+        reff= FirebaseDatabase.getInstance().getReference().child("user").child("dummy");
+        String shoppingcart;
+        String finalcart;
+        String productnum;
+        productnum="270";
+        reff.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                String [] firstdivide;
+                String lastversion="";
+
+
+                String shoppingcart=dataSnapshot.child("shopping_cart").getValue().toString();
+                firstdivide=shoppingcart.split("-",0);
+                for(String cart:firstdivide) {
+                    if(!(cart.startsWith(productnum))){
+                        lastversion=lastversion+cart+"-";
+                    }
+
+                }
+
+
+                reff.child("shopping_cart").setValue(lastversion);
+                Context context = getApplicationContext();
+                CharSequence text = " Removed from Shoppingcart";
+                int duration = Toast.LENGTH_SHORT;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+
+
+    }
+
+    public void shoppingcartadd(View view){
+
+        reff= FirebaseDatabase.getInstance().getReference().child("user").child("dummy");
+        //reff.child("shopping_cart").setValue("none");
+        reff.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                String[]firstdivide;
+                String[]seconddivide;
+                String lastversion="";
+                int howmanyproduct=0;
+                Boolean already=false;
+                String productnum="270";
+
+                String shoppingcart=dataSnapshot.child("shopping_cart").getValue().toString();
+
+                firstdivide=shoppingcart.split("-",0);
+                System.out.println(firstdivide);
+                for(String cart:firstdivide) {
+
+                    if (!(shoppingcart.equals("none"))) {
+                        System.out.println("nnnnnnn");
+                        seconddivide = cart.split(":", 0);
+                        System.out.println(seconddivide[0]);
+                        if (seconddivide[0].equals(productnum)) {
+                            System.out.println("kkkkk");
+                            already = true;
+                            howmanyproduct=Integer.parseInt(seconddivide[1]) + 1;
+                            lastversion = lastversion + seconddivide[0] + ":" + howmanyproduct + "-";
+
+                        } else {
+                            lastversion = lastversion + seconddivide[0] + ":" + seconddivide[1] + "-";
+                        }
+
+                    }
+                }
+                if(already==false){
+                    lastversion = lastversion + productnum + ":" + 1+"-";
+                    howmanyproduct=1;
+                }
+
+                reff.child("shopping_cart").setValue(lastversion);
+                Context context = getApplicationContext();
+                CharSequence text = howmanyproduct+" Number of Product are in Shoppingcart";
+                int duration = Toast.LENGTH_SHORT;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+    }
+
+    public void shoppingcartdelete(View view){
+        reff= FirebaseDatabase.getInstance().getReference().child("user").child("dummy");
+        reff.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                String[]firstdivide;
+                String[]seconddivide;
+                String lastversion="";
+                int howmanyproduct=0;
+                Boolean already=false;
+                String productnum="270";
+
+                String shoppingcart=dataSnapshot.child("shopping_cart").getValue().toString();
+
+                firstdivide=shoppingcart.split("-",0);
+                System.out.println(firstdivide);
+                for(String cart:firstdivide) {
+
+                    if (!(shoppingcart.equals("none"))) {
+
+                        System.out.println("bbbbbbbbb");
+                        seconddivide = cart.split(":", 0);
+                        System.out.println(seconddivide[0]);
+                        if (seconddivide[0].equals(productnum)) {
+
+                            already = true;
+                            System.out.println("offfff");
+                            if(!(Integer.parseInt(seconddivide[1]) - 1==0)) {
+                                howmanyproduct = Integer.parseInt(seconddivide[1]) - 1;
+                                lastversion = lastversion + seconddivide[0] + ":" + howmanyproduct + "-";
+                            }
+
+                        } else {
+                            lastversion = lastversion + seconddivide[0] + ":" + seconddivide[1] + "-";
+                        }
+
+                    }
+                }
+
+                if(lastversion==""){
+                    lastversion="none";
+                }
+                reff.child("shopping_cart").setValue(lastversion);
+                Context context = getApplicationContext();
+                CharSequence text = howmanyproduct+" Number of Product are in Shoppingcart";
+                int duration = Toast.LENGTH_SHORT;
+
+                Toast toast = Toast.makeText(context, text, duration);
+                toast.show();
+
+
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
+
+
+
+    }
+    public void seeshoppingcart(View view){
+        Intent gocart=new Intent(Product_detail.this,ShoppingCart.class);
+        startActivity(gocart);
 
     }
 
